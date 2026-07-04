@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的月曆課表</title>
+    <title>我的月曆課表 ☁️ 雲端同步版</title>
     <style>
         :root {
             --primary-color: #6c5ce7;
@@ -110,10 +110,10 @@
             border-radius: 50%;
         }
         .day-status.has-course {
-            background-color: #3498db; /* 有課：藍點 */
+            background-color: #3498db;
         }
         .day-status.all-done {
-            background-color: var(--success-color); /* 全上完：變綠點 */
+            background-color: var(--success-color);
             width: 12px;
             height: 12px;
             border-radius: 50%;
@@ -135,6 +135,7 @@
             border-radius: 16px;
             padding: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
         }
 
         .detail-title {
@@ -198,54 +199,89 @@
             color: var(--text-light);
             padding: 20px 0;
         }
+
+        /* 雲端載入中提示 */
+        #loading-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.95);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            font-weight: bold; color: var(--primary-color);
+            z-index: 999;
+            transition: opacity 0.3s;
+        }
     </style>
 </head>
 <body>
 
+    <div id="loading-overlay">
+        <span style="font-size: 1.5rem; margin-bottom: 10px;">☁️</span>
+        <span>正在同步雲端課表...</span>
+    </div>
+
     <div class="calendar-container">
         <div class="calendar-header">
-            <button class="nav-btn" onclick="changeMonth(-1)">◀</button>
+            <button class="nav-btn" id="prev-month-btn">◀</button>
             <h2 id="month-title">2026 年 7 月</h2>
-            <button class="nav-btn" onclick="changeMonth(1)">▶</button>
+            <button class="nav-btn" id="next-month-btn">▶</button>
         </div>
-        <div class="calendar-grid" id="calendar-grid">
-            </div>
+        <div class="calendar-grid" id="calendar-grid"></div>
     </div>
 
     <div class="detail-container">
         <div class="detail-title" id="detail-title">選擇日期查看課表</div>
-        <div id="course-list">
-            </div>
+        <div id="course-list"></div>
     </div>
 
-    <script>
-        // ======= 1. 在這裡設定固定週課表（改這裡就好） =======
+    <script type="module">
+        // 統一使用 12.15.0 版本 SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+        // 您的 Firebase 配置 (已修正重複拼接的 databaseURL)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDUguhv6Yjh3DI_H-r-fV3P91AwoBjU0P4",
+            authDomain: "test-309f2.firebaseapp.com",
+            databaseURL: "https://test-309f2-default-rtdb.firebaseio.com", 
+            projectId: "test-309f2",
+            storageBucket: "test-309f2.firebasestorage.app",
+            messagingSenderId: "808641622796",
+            appId: "1:808641622796:web:1a888a1dfee0f88282cf29"
+        };
+
+        // 初始化
+        let app, db, dbRef;
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getDatabase(app);
+            dbRef = ref(db, "attendance");
+        } catch (error) {
+            alert("Firebase 初始化失敗，請檢查設定檔！" + error.message);
+        }
+
+        let cloudData = {}; 
+
+        // ======= 在這裡修改您的固定週課表 =======
         const weeklyTemplate = {
-            1: [ // 星期一
+            1: [ 
                 { time: "09:00 - 12:00", name: "微積分 (一)" },
                 { time: "13:30 - 15:20", name: "大學英文" }
             ],
-            2: [ // 星期二
+            2: [ 
                 { time: "10:10 - 12:00", name: "普通物理" }
             ],
-            3: [], // 星期三放假
-            4: [ // 星期四
+            3: [], 
+            4: [ 
                 { time: "14:00 - 16:50", name: "網頁前端設計" }
             ],
-            5: [ // 星期五
+            5: [ 
                 { time: "09:00 - 10:30", name: "體育（瑜珈）" }
             ],
-            6: [], 0: [] // 六日沒課
+            6: [], 0: [] 
         };
 
-        // ======= 2. 核心邏輯控制 =======
-        let currentDate = new Date(); // 預設今天
-        let selectedDateStr = formatDateKey(currentDate); // 格式化為 "YYYY-MM-DD"
-
-        document.addEventListener('DOMContentLoaded', () => {
-            renderCalendar();
-            renderCourses();
-        });
+        let currentDate = new Date(); 
+        let selectedDateStr = formatDateKey(currentDate); 
 
         function formatDateKey(date) {
             const y = date.getFullYear();
@@ -254,17 +290,45 @@
             return `${y}-${m}-${d}`;
         }
 
-        // 渲染整個月的日曆
+        // 監聽雲端資料庫
+        if (dbRef) {
+            onValue(dbRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    cloudData = snapshot.val();
+                } else {
+                    cloudData = {};
+                }
+                // 成功抓到雲端資料（或確認雲端為空），隱藏載入提示
+                hideLoading();
+                renderCalendar();
+                renderCourses();
+            }, (error) => {
+                alert("雲端同步發生錯誤！請檢查 Firebase 的 Rules 規則是否改為 true。\n詳細錯誤：" + error.message);
+                hideLoading(); // 發生錯誤也強制解鎖，避免無限卡死
+                renderCalendar();
+                renderCourses();
+            });
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                overlay.style.opacity = 0;
+                setTimeout(() => overlay.style.display = 'none', 300);
+            }
+        }
+
+        // 渲染月曆
         function renderCalendar() {
             const grid = document.getElementById('calendar-grid');
             const title = document.getElementById('month-title');
+            if (!grid || !title) return;
             grid.innerHTML = '';
 
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
             title.innerText = `${year} 年 ${month + 1} 月`;
 
-            // 星期欄位標籤
             const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
             weekDays.forEach(d => {
                 const label = document.createElement('div');
@@ -277,14 +341,12 @@
             const totalDays = new Date(year, month + 1, 0).getDate();
             const todayStr = formatDateKey(new Date());
 
-            // 填補月初空白格子
             for (let i = 0; i < firstDayIndex; i++) {
                 const emptyCell = document.createElement('div');
                 emptyCell.className = 'calendar-day empty';
                 grid.appendChild(emptyCell);
             }
 
-            // 生成每一天的格子
             for (let day = 1; day <= totalDays; day++) {
                 const cellDate = new Date(year, month, day);
                 const dateStr = formatDateKey(cellDate);
@@ -294,33 +356,29 @@
                 cell.className = 'calendar-day';
                 cell.innerText = day;
 
-                // 高亮狀態
                 if (dateStr === todayStr) cell.classList.add('today');
                 if (dateStr === selectedDateStr) cell.classList.add('selected');
 
-                // 檢查這一天是否有課，以及勾選狀態
                 const dayCourses = weeklyTemplate[dayOfWeek] || [];
                 if (dayCourses.length > 0) {
                     const statusDot = document.createElement('div');
                     statusDot.className = 'day-status';
                     
-                    // 檢查這一天是否「所有課都上完了」
                     let allChecked = true;
                     dayCourses.forEach((c, index) => {
-                        if (localStorage.getItem(`${dateStr}-${index}`) !== 'true') {
+                        if (!cloudData[`${dateStr}-${index}`]) {
                             allChecked = false;
                         }
                     });
 
                     if (allChecked) {
-                        statusDot.classList.add('all-done'); // 全部勾選變綠色小勾
+                        statusDot.classList.add('all-done'); 
                     } else {
-                        statusDot.classList.add('has-course'); // 有課未完顯示藍點
+                        statusDot.classList.add('has-course'); 
                     }
                     cell.appendChild(statusDot);
                 }
 
-                // 點擊月曆格子切換日期
                 cell.addEventListener('click', () => {
                     selectedDateStr = dateStr;
                     document.querySelectorAll('.calendar-day').forEach(c => c.classList.remove('selected'));
@@ -332,10 +390,11 @@
             }
         }
 
-        // 渲染當天的詳細課表
+        // 渲染課表
         function renderCourses() {
             const listContainer = document.getElementById('course-list');
             const titleContainer = document.getElementById('detail-title');
+            if (!listContainer || !titleContainer) return;
             listContainer.innerHTML = '';
 
             const parts = selectedDateStr.split('-');
@@ -344,7 +403,6 @@
             const weekDaysName = ['日', '一', '二', '三', '四', '五', '六'];
 
             titleContainer.innerText = `${parts[1]}月${parts[2]}日 (星期${weekDaysName[dayOfWeek]}) 課表`;
-
             const dayCourses = weeklyTemplate[dayOfWeek] || [];
 
             if (dayCourses.length === 0) {
@@ -357,8 +415,7 @@
                 const slot = document.createElement('div');
                 slot.className = 'course-slot';
                 
-                // 讀取這一天這一堂課的打勾紀錄
-                if (localStorage.getItem(storageKey) === 'true') {
+                if (cloudData[storageKey] === true) {
                     slot.classList.add('checked');
                 }
 
@@ -367,28 +424,26 @@
                     <div class="course-name">${course.name}</div>
                 `;
 
-                // 點擊課表格子切換打勾狀態
                 slot.addEventListener('click', () => {
-                    if (slot.classList.contains('checked')) {
-                        slot.classList.remove('checked');
-                        localStorage.removeItem(storageKey);
-                    } else {
-                        slot.classList.add('checked');
-                        localStorage.setItem(storageKey, 'true');
-                    }
-                    // 重新渲染月曆，以便即時更新上方的小圓點/綠勾
-                    renderCalendar();
+                    const isChecked = slot.classList.contains('checked');
+                    set(ref(db, `attendance/${storageKey}`), !isChecked).catch(err => {
+                        alert("儲存失敗，請確認資料庫權限！" + err.message);
+                    });
                 });
 
                 listContainer.appendChild(slot);
             });
         }
 
-        // 月份切換
-        function changeMonth(direction) {
-            currentDate.setMonth(currentDate.getMonth() + direction);
+        // 綁定按鈕
+        document.getElementById('prev-month-btn').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
             renderCalendar();
-        }
+        });
+        document.getElementById('next-month-btn').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        });
     </script>
 </body>
 </html>
