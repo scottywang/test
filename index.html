@@ -3,229 +3,391 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的互動課表</title>
+    <title>我的月曆課表</title>
     <style>
         :root {
-            --primary-color: #4a90e2;
-            --bg-color: #f5f7fa;
+            --primary-color: #6c5ce7;
+            --bg-color: #f1f2f6;
             --card-bg: #ffffff;
-            --text-color: #333333;
-            --text-light: #888888;
-            --checked-bg: #e2f0d9;
-            --checked-border: #70ad47;
+            --text-color: #2d3436;
+            --text-light: #b2bec3;
+            --success-color: #2ecc71;
+            --done-bg: #f5f6fa;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 15px;
-        }
-
-        h1 {
-            text-align: center;
-            font-size: 1.5rem;
-            color: #2c3e50;
-            margin-bottom: 20px;
-        }
-
-        /* 星期區塊 */
-        .day-section {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .day-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--primary-color);
-            border-bottom: 2px solid var(--bg-color);
-            padding-bottom: 8px;
-            margin-top: 0;
-            margin-bottom: 12px;
-        }
-
-        /* 課程項目 */
-        .course-item {
-            display: flex;
-            align-items: center;
             padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            border: 1px solid #eef2f5;
-            transition: all 0.2s ease;
+            padding-bottom: 40px;
+        }
+
+        /* 月曆外殼 */
+        .calendar-container {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .calendar-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .nav-btn {
+            background: #eee;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: bold;
             cursor: pointer;
-            user-select: none;
         }
 
-        /* 隱藏原生 checkbox */
-        .course-item input[type="checkbox"] {
-            display: none;
+        /* 月曆網格 */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            text-align: center;
         }
 
-        /* 自訂勾選圓圈 */
-        .custom-checkbox {
-            width: 22px;
-            height: 22px;
-            border: 2px solid #cbd5e1;
+        .weekday-label {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--text-light);
+            padding-bottom: 5px;
+        }
+
+        .calendar-day {
+            position: relative;
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #fdfdfd;
+            border: 1px solid #f1f1f1;
+        }
+
+        .calendar-day.empty {
+            background: transparent;
+            border: none;
+            cursor: default;
+        }
+
+        .calendar-day.selected {
+            background: #e8f4fd;
+            border-color: #3498db;
+            font-weight: bold;
+        }
+
+        .calendar-day.today {
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+
+        /* 月曆上的狀態提示點/勾 */
+        .day-status {
+            position: absolute;
+            bottom: 4px;
+            width: 5px;
+            height: 5px;
             border-radius: 50%;
-            margin-right: 12px;
+        }
+        .day-status.has-course {
+            background-color: #3498db; /* 有課：藍點 */
+        }
+        .day-status.all-done {
+            background-color: var(--success-color); /* 全上完：變綠點 */
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            bottom: 2px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
-            flex-shrink: 0;
         }
-
-        .custom-checkbox::after {
+        .day-status.all-done::after {
             content: "✓";
             color: white;
-            font-size: 14px;
+            font-size: 8px;
             font-weight: bold;
-            display: none;
         }
 
-        .course-info {
-            flex-grow: 1;
+        /* 下方當日詳細課表區 */
+        .detail-container {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
 
-        .course-name {
-            font-weight: 600;
-            font-size: 1rem;
-            margin-bottom: 2px;
+        .detail-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #34495e;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 8px;
+        }
+
+        .course-slot {
+            position: relative;
+            padding: 14px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--primary-color);
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
         .course-time {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 3px;
+        }
+
+        .course-name {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        /* 已上課變色樣式 */
+        .course-slot.checked {
+            background: var(--done-bg);
+            border-left-color: var(--text-light);
             color: var(--text-light);
         }
-
-        /* 勾選後的樣式變更 */
-        .course-item.completed {
-            background-color: var(--checked-bg);
-            border-color: var(--checked-border);
-            opacity: 0.8;
+        .course-slot.checked .course-time { color: var(--text-light); }
+        .course-slot.checked .course-name { text-decoration: line-through; }
+        
+        .course-slot::after {
+            content: "✓ 已上課";
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.75rem;
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+            padding: 1px 4px;
+            border-radius: 3px;
+            opacity: 0;
         }
+        .course-slot.checked::after { opacity: 0.7; }
 
-        .course-item.completed .custom-checkbox {
-            background-color: var(--checked-border);
-            border-color: var(--checked-border);
-        }
-
-        .course-item.completed .custom-checkbox::after {
-            display: block;
-        }
-
-        .course-item.completed .course-name {
-            text-decoration: line-through;
-            color: #555;
-        }
-
-        /* 重置按鈕 */
-        .reset-btn {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: bold;
-            margin-top: 25px;
-            margin-bottom: 40px;
-            box-shadow: 0 4px 6px rgba(231, 76, 60, 0.2);
+        .no-course {
+            text-align: center;
+            color: var(--text-light);
+            padding: 20px 0;
         }
     </style>
 </head>
 <body>
 
-    <h1>📅 我的本週課表</h1>
-
-    <div class="day-section">
-        <div class="day-title">星期一</div>
-        
-        <label class="course-item" data-id="mon-1">
-            <input type="checkbox">
-            <span class="custom-checkbox"></span>
-            <div class="course-info">
-                <div class="course-name">微積分 (一)</div>
-                <div class="course-time">09:00 - 12:00 | 綜合成議大樓 302</div>
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <button class="nav-btn" onclick="changeMonth(-1)">◀</button>
+            <h2 id="month-title">2026 年 7 月</h2>
+            <button class="nav-btn" onclick="changeMonth(1)">▶</button>
+        </div>
+        <div class="calendar-grid" id="calendar-grid">
             </div>
-        </label>
-
-        <label class="course-item" data-id="mon-2">
-            <input type="checkbox">
-            <span class="custom-checkbox"></span>
-            <div class="course-info">
-                <div class="course-name">大學英文</div>
-                <div class="course-time">13:30 - 15:20 | 語文館 101</div>
-            </div>
-        </label>
     </div>
 
-    <div class="day-section">
-        <div class="day-title">星期二</div>
-        
-        <label class="course-item" data-id="tue-1">
-            <input type="checkbox">
-            <span class="custom-checkbox"></span>
-            <div class="course-info">
-                <div class="course-name">普通物理</div>
-                <div class="course-time">10:10 - 12:00 | 理學館 204</div>
+    <div class="detail-container">
+        <div class="detail-title" id="detail-title">選擇日期查看課表</div>
+        <div id="course-list">
             </div>
-        </label>
     </div>
-
-    <div class="day-section">
-        <div class="day-title">星期三</div>
-        <p style="color: #aaa; font-size: 0.9rem; margin-left: 5px;">今天沒課，放假！</p>
-    </div>
-
-    <button class="reset-btn" onclick="resetCheckboxes()">重置所有課表（新的一週）</button>
 
     <script>
-        // 當網頁載入時，自動回復上一次的勾選狀態
+        // ======= 1. 在這裡設定固定週課表（改這裡就好） =======
+        const weeklyTemplate = {
+            1: [ // 星期一
+                { time: "09:00 - 12:00", name: "微積分 (一)" },
+                { time: "13:30 - 15:20", name: "大學英文" }
+            ],
+            2: [ // 星期二
+                { time: "10:10 - 12:00", name: "普通物理" }
+            ],
+            3: [], // 星期三放假
+            4: [ // 星期四
+                { time: "14:00 - 16:50", name: "網頁前端設計" }
+            ],
+            5: [ // 星期五
+                { time: "09:00 - 10:30", name: "體育（瑜珈）" }
+            ],
+            6: [], 0: [] // 六日沒課
+        };
+
+        // ======= 2. 核心邏輯控制 =======
+        let currentDate = new Date(); // 預設今天
+        let selectedDateStr = formatDateKey(currentDate); // 格式化為 "YYYY-MM-DD"
+
         document.addEventListener('DOMContentLoaded', () => {
-            const checkboxes = document.querySelectorAll('.course-item input[type="checkbox"]');
-            
-            checkboxes.forEach(checkbox => {
-                const courseItem = checkbox.closest('.course-item');
-                const id = courseItem.getAttribute('data-id');
-                
-                // 檢查 LocalStorage 是否有紀錄
-                if (localStorage.getItem(id) === 'true') {
-                    checkbox.checked = true;
-                    courseItem.classList.add('completed');
+            renderCalendar();
+            renderCourses();
+        });
+
+        function formatDateKey(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        // 渲染整個月的日曆
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            const title = document.getElementById('month-title');
+            grid.innerHTML = '';
+
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            title.innerText = `${year} 年 ${month + 1} 月`;
+
+            // 星期欄位標籤
+            const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+            weekDays.forEach(d => {
+                const label = document.createElement('div');
+                label.className = 'weekday-label';
+                label.innerText = d;
+                grid.appendChild(label);
+            });
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const totalDays = new Date(year, month + 1, 0).getDate();
+            const todayStr = formatDateKey(new Date());
+
+            // 填補月初空白格子
+            for (let i = 0; i < firstDayIndex; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'calendar-day empty';
+                grid.appendChild(emptyCell);
+            }
+
+            // 生成每一天的格子
+            for (let day = 1; day <= totalDays; day++) {
+                const cellDate = new Date(year, month, day);
+                const dateStr = formatDateKey(cellDate);
+                const dayOfWeek = cellDate.getDay();
+
+                const cell = document.createElement('div');
+                cell.className = 'calendar-day';
+                cell.innerText = day;
+
+                // 高亮狀態
+                if (dateStr === todayStr) cell.classList.add('today');
+                if (dateStr === selectedDateStr) cell.classList.add('selected');
+
+                // 檢查這一天是否有課，以及勾選狀態
+                const dayCourses = weeklyTemplate[dayOfWeek] || [];
+                if (dayCourses.length > 0) {
+                    const statusDot = document.createElement('div');
+                    statusDot.className = 'day-status';
+                    
+                    // 檢查這一天是否「所有課都上完了」
+                    let allChecked = true;
+                    dayCourses.forEach((c, index) => {
+                        if (localStorage.getItem(`${dateStr}-${index}`) !== 'true') {
+                            allChecked = false;
+                        }
+                    });
+
+                    if (allChecked) {
+                        statusDot.classList.add('all-done'); // 全部勾選變綠色小勾
+                    } else {
+                        statusDot.classList.add('has-course'); // 有課未完顯示藍點
+                    }
+                    cell.appendChild(statusDot);
                 }
 
-                // 監聽點擊事件
-                checkbox.addEventListener('change', (e) => {
-                    if (e.target.checked) {
-                        courseItem.classList.add('completed');
-                        localStorage.setItem(id, 'true');
-                    } else {
-                        courseItem.classList.remove('completed');
-                        localStorage.setItem(id, 'false');
-                    }
+                // 點擊月曆格子切換日期
+                cell.addEventListener('click', () => {
+                    selectedDateStr = dateStr;
+                    document.querySelectorAll('.calendar-day').forEach(c => c.classList.remove('selected'));
+                    cell.classList.add('selected');
+                    renderCourses();
                 });
-            });
-        </script>
-        <script>
-        // 重置功能
-        function resetCheckboxes() {
-            if (confirm('確定要清除本週的所有上課紀錄嗎？')) {
-                const checkboxes = document.querySelectorAll('.course-item input[type="checkbox"]');
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = false;
-                    checkbox.closest('.course-item').classList.remove('completed');
-                });
-                localStorage.clear();
+
+                grid.appendChild(cell);
             }
+        }
+
+        // 渲染當天的詳細課表
+        function renderCourses() {
+            const listContainer = document.getElementById('course-list');
+            const titleContainer = document.getElementById('detail-title');
+            listContainer.innerHTML = '';
+
+            const parts = selectedDateStr.split('-');
+            const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+            const dayOfWeek = dateObj.getDay();
+            const weekDaysName = ['日', '一', '二', '三', '四', '五', '六'];
+
+            titleContainer.innerText = `${parts[1]}月${parts[2]}日 (星期${weekDaysName[dayOfWeek]}) 課表`;
+
+            const dayCourses = weeklyTemplate[dayOfWeek] || [];
+
+            if (dayCourses.length === 0) {
+                listContainer.innerHTML = '<div class="no-course">🎉 今天沒有排課，放假囉！</div>';
+                return;
+            }
+
+            dayCourses.forEach((course, index) => {
+                const storageKey = `${selectedDateStr}-${index}`;
+                const slot = document.createElement('div');
+                slot.className = 'course-slot';
+                
+                // 讀取這一天這一堂課的打勾紀錄
+                if (localStorage.getItem(storageKey) === 'true') {
+                    slot.classList.add('checked');
+                }
+
+                slot.innerHTML = `
+                    <div class="course-time">${course.time}</div>
+                    <div class="course-name">${course.name}</div>
+                `;
+
+                // 點擊課表格子切換打勾狀態
+                slot.addEventListener('click', () => {
+                    if (slot.classList.contains('checked')) {
+                        slot.classList.remove('checked');
+                        localStorage.removeItem(storageKey);
+                    } else {
+                        slot.classList.add('checked');
+                        localStorage.setItem(storageKey, 'true');
+                    }
+                    // 重新渲染月曆，以便即時更新上方的小圓點/綠勾
+                    renderCalendar();
+                });
+
+                listContainer.appendChild(slot);
+            });
+        }
+
+        // 月份切換
+        function changeMonth(direction) {
+            currentDate.setMonth(currentDate.getMonth() + direction);
+            renderCalendar();
         }
     </script>
 </body>
