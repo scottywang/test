@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的月曆課表 ☁️ 雲端同步版</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #6c5ce7;
@@ -16,7 +17,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
@@ -138,24 +139,89 @@
             margin-bottom: 15px;
         }
 
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
         .detail-title {
             font-size: 1.1rem;
             font-weight: bold;
-            margin-bottom: 12px;
             color: #34495e;
             border-left: 4px solid var(--primary-color);
             padding-left: 8px;
+            margin-bottom: 0;
+        }
+
+        .add-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 2px 8px rgba(108, 92, 231, 0.2);
+            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+        }
+
+        .add-btn:hover {
+            background-color: #5b4bc4;
+            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+        }
+
+        .add-btn:active {
+            transform: scale(0.97);
         }
 
         .course-slot {
-            position: relative;
-            padding: 14px;
+            display: flex;
+            align-items: center;
+            padding: 12px 14px;
             background: #f8f9fa;
             border-radius: 10px;
             margin-bottom: 10px;
             border-left: 4px solid var(--primary-color);
             cursor: pointer;
             transition: all 0.2s;
+        }
+
+        .course-slot:hover {
+            background: #f1f2f6;
+            transform: translateY(-1px);
+        }
+
+        .course-checkbox {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #ccc;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            color: transparent;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .course-slot.checked .course-checkbox {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+            color: white;
+        }
+
+        .course-info {
+            flex-grow: 1;
+            min-width: 0;
         }
 
         .course-time {
@@ -168,36 +234,201 @@
         .course-name {
             font-size: 1rem;
             font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        /* 已上課變色樣式 */
         .course-slot.checked {
             background: var(--done-bg);
             border-left-color: var(--text-light);
-            color: var(--text-light);
         }
         .course-slot.checked .course-time { color: var(--text-light); }
-        .course-slot.checked .course-name { text-decoration: line-through; }
-        
-        .course-slot::after {
-            content: "✓ 已上課";
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 0.75rem;
-            color: var(--success-color);
-            border: 1px solid var(--success-color);
-            padding: 1px 4px;
-            border-radius: 3px;
-            opacity: 0;
+        .course-slot.checked .course-name { text-decoration: line-through; color: var(--text-light); }
+
+        .course-actions {
+            display: flex;
+            gap: 6px;
+            margin-left: 10px;
+            flex-shrink: 0;
         }
-        .course-slot.checked::after { opacity: 0.7; }
+
+        .action-btn {
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: background-color 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-btn:hover {
+            background-color: rgba(0,0,0,0.05);
+            transform: scale(1.15);
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
 
         .no-course {
             text-align: center;
             color: var(--text-light);
             padding: 20px 0;
+        }
+
+        /* Modal 彈出視窗樣式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(6px);
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            padding: 24px;
+            border-radius: 18px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .modal.show .modal-content {
+            transform: scale(1);
+        }
+
+        .close-btn {
+            position: absolute;
+            right: 20px;
+            top: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .close-btn:hover {
+            color: var(--text-color);
+        }
+
+        .modal h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.25rem;
+            color: var(--text-color);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 0.95rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15);
+        }
+
+        .quick-times {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .quick-time-btn {
+            background: #f1f2f6;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            color: #555;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .quick-time-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background-color: #f1f2f6;
+            color: var(--text-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #e4e7eb;
         }
 
         /* 雲端載入中提示 */
@@ -209,6 +440,203 @@
             font-weight: bold; color: var(--primary-color);
             z-index: 999;
             transition: opacity 0.3s;
+        }
+
+        /* 行程重複設定樣式 */
+        .recurrence-section {
+            background-color: #fcfcfd;
+            border: 1px dashed #ddd;
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 15px;
+            box-sizing: border-box;
+        }
+
+        .recurrence-toggle-wrapper {
+            margin-bottom: 8px;
+        }
+
+        .switch-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .switch-label input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .repeat-options-box {
+            margin-top: 10px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .weekday-checkboxes {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            gap: 4px;
+        }
+
+        .weekday-lbl {
+            flex: 1;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+            padding: 6px 0;
+            border-radius: 6px;
+            background-color: #f1f2f6;
+            color: #555;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid transparent;
+        }
+
+        .weekday-lbl input[type="checkbox"] {
+            display: none;
+        }
+
+        .weekday-lbl.checked {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 2px 6px rgba(108, 92, 231, 0.2);
+        }
+
+        .repeat-count-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .repeat-count-group label {
+            margin-bottom: 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .repeat-count-group input[type="number"] {
+            width: 80px;
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        /* 批次刪除與匯出按鈕面板樣式 */
+        .calendar-footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
+            gap: 10px;
+        }
+
+        .batch-delete-btn {
+            background-color: transparent;
+            color: #ff7675;
+            border: 1px solid #ff7675;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .batch-delete-btn:hover {
+            background-color: #ff7675;
+            color: white;
+            box-shadow: 0 2px 6px rgba(255, 118, 117, 0.2);
+        }
+
+        .batch-delete-btn:active {
+            transform: scale(0.97);
+        }
+
+        .export-btn {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .export-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 2px 6px rgba(108, 92, 231, 0.2);
+        }
+
+        .export-btn:active {
+            transform: scale(0.97);
+        }
+
+        .tab-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tab-btn {
+            background-color: #f1f2f6;
+            color: var(--text-color);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .dates-checklist-box {
+            max-height: 180px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #fafbfc;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            color: var(--text-color);
+            cursor: pointer;
+        }
+
+        .checklist-item input {
+            width: auto;
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -226,11 +654,145 @@
             <button class="nav-btn" id="next-month-btn">▶</button>
         </div>
         <div class="calendar-grid" id="calendar-grid"></div>
+        <div class="calendar-footer">
+            <button id="open-export-btn" class="export-btn">📤 匯出行程代碼</button>
+            <button id="open-batch-delete-btn" class="batch-delete-btn">🗑️ 批次清除行程</button>
+        </div>
     </div>
 
     <div class="detail-container">
-        <div class="detail-title" id="detail-title">選擇日期查看課表</div>
+        <div class="detail-header">
+            <div class="detail-title" id="detail-title">選擇日期查看課表</div>
+            <button id="add-schedule-btn" class="add-btn">➕ 新增行程</button>
+        </div>
         <div id="course-list"></div>
+    </div>
+
+    <!-- 新增/修改行程的彈出視窗 -->
+    <div id="schedule-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-modal-btn">&times;</span>
+            <h3 id="modal-title">新增行程</h3>
+            <form id="schedule-form">
+                <input type="hidden" id="edit-item-id">
+                
+                <div class="form-group">
+                    <label for="schedule-time">時間</label>
+                    <input type="text" id="schedule-time" placeholder="例如: 09:00 - 12:00 或 全天" required>
+                    <div class="quick-times">
+                        <button type="button" class="quick-time-btn" data-time="09:00 - 12:30">早上</button>
+                        <button type="button" class="quick-time-btn" data-time="13:30 - 17:00">中午</button>
+                        <button type="button" class="quick-time-btn" data-time="14:00 - 17:30">下午</button>
+                        <button type="button" class="quick-time-btn" data-time="18:30 - 22:00">傍晚</button>
+                        <button type="button" class="quick-time-btn" data-time="全天">全天</button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="schedule-name">行程名稱</label>
+                    <input type="text" id="schedule-name" list="course-options" placeholder="例如: 運動、開會，或選擇下拉選項" required>
+                    <datalist id="course-options">
+                        <option value="輔原"></option>
+                        <option value="普心"></option>
+                        <option value="統計"></option>
+                        <option value="測驗"></option>
+                        <option value="英文"></option>
+                        <option value="研究法"></option>
+                        <option value="演練"></option>
+                    </datalist>
+                </div>
+
+                <!-- 重複行程設定區塊 -->
+                <div class="form-group recurrence-section" id="recurrence-section">
+                    <div class="recurrence-toggle-wrapper">
+                        <label class="switch-label">
+                            <input type="checkbox" id="enable-repeat">
+                            <span>啟用重複行程設定</span>
+                        </label>
+                    </div>
+                    
+                    <div id="repeat-options" class="repeat-options-box" style="display: none;">
+                        <div class="weekday-checkboxes">
+                            <label class="weekday-lbl"><input type="checkbox" class="repeat-weekday" value="1"> 一</label>
+                            <label class="weekday-lbl"><input type="checkbox" class="repeat-weekday" value="2"> 二</label>
+                            <label class="weekday-lbl"><input type="checkbox" class="repeat-weekday" value="3"> 三</label>
+                            <label class="weekday-lbl"><input type="checkbox" class="repeat-weekday" value="4"> 四</label>
+                            <label class="weekday-lbl"><input type="checkbox" class="repeat-weekday" value="5"> 五</label>
+                            <label class="weekday-lbl"><input type="checkbox" class="repeat-weekday" value="6"> 六</label>
+                            <label class="weekday-lbl"><input type="checkbox" class="repeat-weekday" value="0"> 日</label>
+                        </div>
+                        <div class="repeat-count-group">
+                            <label for="repeat-count">總共設定數量 (次)：</label>
+                            <input type="number" id="repeat-count" min="1" max="100" value="4">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-modal-btn">取消</button>
+                    <button type="submit" class="btn btn-primary" id="save-modal-btn">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 批次刪除行程的彈出視窗 -->
+    <div id="batch-delete-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-batch-modal-btn">&times;</span>
+            <h3>🗑️ 批次清除行程</h3>
+            
+            <div class="tab-container">
+                <button type="button" class="tab-btn active" id="tab-by-list-btn">選擇日期列表</button>
+                <button type="button" class="tab-btn" id="tab-by-range-btn">設定日期範圍</button>
+            </div>
+            
+            <form id="batch-delete-form">
+                <!-- 頁籤一：依自訂行程日期列表多選 -->
+                <div id="batch-select-list-view">
+                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">請勾選要清空行程的日期：</p>
+                    <div id="scheduled-dates-list" class="dates-checklist-box">
+                        <!-- 動態渲染有行程的日期 -->
+                    </div>
+                </div>
+
+                <!-- 頁籤二：依日期範圍 -->
+                <div id="batch-select-range-view" style="display: none;">
+                    <div class="form-group">
+                        <label for="batch-start-date">開始日期</label>
+                        <input type="date" id="batch-start-date">
+                    </div>
+                    <div class="form-group">
+                        <label for="batch-end-date">結束日期</label>
+                        <input type="date" id="batch-end-date">
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-batch-modal-btn">取消</button>
+                    <button type="submit" class="btn btn-danger" id="confirm-batch-delete-btn" style="background-color: #ff7675; color: white;">確認清除</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 匯出行程代碼的彈出視窗 -->
+    <div id="export-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <span class="close-btn" id="close-export-modal-btn">&times;</span>
+            <h3>📤 匯出行程代碼</h3>
+            <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">
+                請複製下方代碼，並貼上替換到 `index.html` 原始碼中的 `const defaultSchedules = ...` 區塊。<br>
+                這樣即使清空資料庫，網頁也會預設載入你貼上的這些行程！
+            </p>
+            <div class="form-group">
+                <textarea id="export-code-area" readonly style="width: 100%; height: 200px; font-family: monospace; font-size: 0.8rem; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; resize: none; background-color: #f8f9fa;"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="cancel-export-modal-btn">取消</button>
+                <button type="button" class="btn btn-primary" id="copy-export-code-btn">📋 複製代碼</button>
+            </div>
+        </div>
     </div>
 
     <script type="module">
@@ -254,14 +816,19 @@
         try {
             app = initializeApp(firebaseConfig);
             db = getDatabase(app);
-            dbRef = ref(db, "attendance");
+            dbRef = ref(db); // 監聽根節點，以便同時獲取 attendance 與 schedules
         } catch (error) {
             alert("Firebase 初始化失敗，請檢查設定檔！" + error.message);
         }
 
-        let cloudData = {}; 
+        let cloudData = { attendance: {}, schedules: {} }; 
+
+        // ======= 在這裡貼上您匯出的歷史自訂行程 =======
+        // [說明] 當 Firebase 資料庫無該日期行程時，會以此為第二預設值載入
+        const defaultSchedules = {};
 
         // ======= 在這裡修改您的固定週課表 =======
+        // [說明] 當 Firebase 與上面的 defaultSchedules 都無此日期資料時，會套用此固定週範本
         const weeklyTemplate = {
             1: [ 
                 { time: "09:00 - 12:00", name: "微積分 (一)" },
@@ -296,9 +863,14 @@
                 if (snapshot.exists()) {
                     cloudData = snapshot.val();
                 } else {
-                    cloudData = {};
+                    cloudData = { attendance: {}, schedules: {} };
                 }
-                // 成功抓到雲端資料（或確認雲端為空），隱藏載入提示
+                
+                // 確保必要子節點存在
+                if (!cloudData.attendance) cloudData.attendance = {};
+                if (!cloudData.schedules) cloudData.schedules = {};
+
+                // 成功抓到雲端資料，隱藏載入提示
                 hideLoading();
                 renderCalendar();
                 renderCourses();
@@ -316,6 +888,71 @@
                 overlay.style.opacity = 0;
                 setTimeout(() => overlay.style.display = 'none', 300);
             }
+        }
+
+        // 取得指定日期的所有行程（整合預設範本、程式碼內建 defaultSchedules 與雲端自訂行程）
+        function getDaySchedules(dateStr, dayOfWeek) {
+            if (cloudData.schedules && cloudData.schedules[dateStr]) {
+                // 1. 已有雲端自訂行程
+                return cloudData.schedules[dateStr].items || [];
+            } else if (defaultSchedules && defaultSchedules[dateStr]) {
+                // 2. 雲端無資料，但程式碼中貼入了預設匯出行程
+                return defaultSchedules[dateStr].items || [];
+            } else {
+                // 3. 使用預設週範本
+                const template = weeklyTemplate[dayOfWeek] || [];
+                return template.map((item, index) => ({
+                    id: `template-${index}`,
+                    time: item.time,
+                    name: item.name,
+                    checked: !!(cloudData.attendance && cloudData.attendance[`${dateStr}-${index}`]),
+                    isTemplate: true
+                }));
+            }
+        }
+
+        // 轉換為客製化行程陣列（當需要新增、編輯、刪除時）
+        function convertToCustom(dateStr, dayOfWeek) {
+            const currentItems = getDaySchedules(dateStr, dayOfWeek);
+            return currentItems.map((item, index) => {
+                if (item.isTemplate) {
+                    return {
+                        id: 'custom-' + Date.now() + '-' + index + '-' + Math.random().toString(36).substr(2, 4),
+                        time: item.time,
+                        name: item.name,
+                        checked: item.checked
+                    };
+                }
+                return item;
+            });
+        }
+
+        // 儲存特定日期的行程
+        function saveDaySchedules(dateStr, items) {
+            return set(ref(db, `schedules/${dateStr}`), {
+                custom: true,
+                items: items
+            });
+        }
+
+        // 根據重複設定與起點日期計算所有目標日期
+        function getRecurringDates(startDateStr, selectedWeekdays, count) {
+            const dates = [];
+            const parts = startDateStr.split('-');
+            let current = new Date(parts[0], parts[1] - 1, parts[2]);
+
+            if (selectedWeekdays.length === 0) {
+                return [startDateStr];
+            }
+
+            while (dates.length < count) {
+                const dayOfWeek = current.getDay();
+                if (selectedWeekdays.includes(dayOfWeek)) {
+                    dates.push(formatDateKey(current));
+                }
+                current.setDate(current.getDate() + 1);
+            }
+            return dates;
         }
 
         // 渲染月曆
@@ -359,14 +996,14 @@
                 if (dateStr === todayStr) cell.classList.add('today');
                 if (dateStr === selectedDateStr) cell.classList.add('selected');
 
-                const dayCourses = weeklyTemplate[dayOfWeek] || [];
+                const dayCourses = getDaySchedules(dateStr, dayOfWeek);
                 if (dayCourses.length > 0) {
                     const statusDot = document.createElement('div');
                     statusDot.className = 'day-status';
                     
                     let allChecked = true;
-                    dayCourses.forEach((c, index) => {
-                        if (!cloudData[`${dateStr}-${index}`]) {
+                    dayCourses.forEach((c) => {
+                        if (!c.checked) {
                             allChecked = false;
                         }
                     });
@@ -390,7 +1027,7 @@
             }
         }
 
-        // 渲染課表
+        // 渲染當日課表與行程
         function renderCourses() {
             const listContainer = document.getElementById('course-list');
             const titleContainer = document.getElementById('detail-title');
@@ -402,40 +1039,422 @@
             const dayOfWeek = dateObj.getDay();
             const weekDaysName = ['日', '一', '二', '三', '四', '五', '六'];
 
-            titleContainer.innerText = `${parts[1]}月${parts[2]}日 (星期${weekDaysName[dayOfWeek]}) 課表`;
-            const dayCourses = weeklyTemplate[dayOfWeek] || [];
+            titleContainer.innerText = `${parts[1]}月${parts[2]}日 (星期${weekDaysName[dayOfWeek]}) 行程`;
+            const dayCourses = getDaySchedules(selectedDateStr, dayOfWeek);
 
             if (dayCourses.length === 0) {
-                listContainer.innerHTML = '<div class="no-course">🎉 今天沒有排課，放假囉！</div>';
+                listContainer.innerHTML = '<div class="no-course">🎉 今天沒有排行程，放假囉！</div>';
                 return;
             }
 
             dayCourses.forEach((course, index) => {
-                const storageKey = `${selectedDateStr}-${index}`;
                 const slot = document.createElement('div');
                 slot.className = 'course-slot';
                 
-                if (cloudData[storageKey] === true) {
+                if (course.checked === true) {
                     slot.classList.add('checked');
                 }
 
                 slot.innerHTML = `
-                    <div class="course-time">${course.time}</div>
-                    <div class="course-name">${course.name}</div>
+                    <div class="course-checkbox">✓</div>
+                    <div class="course-info">
+                        <div class="course-time">${course.time}</div>
+                        <div class="course-name">${course.name}</div>
+                    </div>
+                    <div class="course-actions">
+                        <button class="action-btn edit-btn" title="編輯">✏️</button>
+                        <button class="action-btn delete-btn" title="刪除">🗑️</button>
+                    </div>
                 `;
 
-                slot.addEventListener('click', () => {
-                    const isChecked = slot.classList.contains('checked');
-                    set(ref(db, `attendance/${storageKey}`), !isChecked).catch(err => {
-                        alert("儲存失敗，請確認資料庫權限！" + err.message);
-                    });
+                // 點擊卡片切換完成狀態
+                slot.addEventListener('click', (e) => {
+                    if (e.target.closest('.action-btn')) return;
+                    toggleChecked(course, index);
+                });
+
+                // 編輯按鈕
+                slot.querySelector('.edit-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showModal('編輯行程', course.id, course.time, course.name);
+                });
+
+                // 刪除按鈕
+                slot.querySelector('.delete-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteSchedule(course.id);
                 });
 
                 listContainer.appendChild(slot);
             });
         }
 
-        // 綁定按鈕
+        // 切換完成狀態
+        function toggleChecked(item, index) {
+            if (item.isTemplate) {
+                const storageKey = `${selectedDateStr}-${index}`;
+                set(ref(db, `attendance/${storageKey}`), !item.checked).catch(err => {
+                    alert("儲存失敗，請確認資料庫權限！" + err.message);
+                });
+            } else {
+                const parts = selectedDateStr.split('-');
+                const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+                const dayOfWeek = dateObj.getDay();
+                let items = getDaySchedules(selectedDateStr, dayOfWeek);
+                
+                items = items.map(x => {
+                    if (x.id === item.id) {
+                        return { ...x, checked: !x.checked };
+                    }
+                    return x;
+                });
+                
+                saveDaySchedules(selectedDateStr, items).catch(err => {
+                    alert("儲存失敗，請確認資料庫權限！" + err.message);
+                });
+            }
+        }
+
+        // 刪除行程
+        function deleteSchedule(itemId) {
+            if (confirm("確定要刪除此行程嗎？")) {
+                const parts = selectedDateStr.split('-');
+                const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+                const dayOfWeek = dateObj.getDay();
+
+                let items = convertToCustom(selectedDateStr, dayOfWeek);
+                items = items.filter(item => item.id !== itemId);
+
+                saveDaySchedules(selectedDateStr, items).catch(err => {
+                    alert("刪除失敗：" + err.message);
+                });
+            }
+        }
+
+        // 彈出視窗相關邏輯
+        const modal = document.getElementById('schedule-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const scheduleForm = document.getElementById('schedule-form');
+        const editItemIdInput = document.getElementById('edit-item-id');
+        const scheduleTimeInput = document.getElementById('schedule-time');
+        const scheduleNameInput = document.getElementById('schedule-name');
+        const cancelModalBtn = document.getElementById('cancel-modal-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const addScheduleBtn = document.getElementById('add-schedule-btn');
+
+        function showModal(title, id = '', time = '', name = '') {
+            modalTitle.innerText = title;
+            editItemIdInput.value = id;
+            scheduleTimeInput.value = time;
+            scheduleNameInput.value = name;
+
+            const repeatSection = document.getElementById('recurrence-section');
+            if (id) {
+                // 編輯行程：隱藏重複設定區塊
+                repeatSection.style.display = 'none';
+            } else {
+                // 新增行程：顯示重複設定區塊，並重置狀態
+                repeatSection.style.display = 'block';
+                document.getElementById('enable-repeat').checked = false;
+                document.getElementById('repeat-options').style.display = 'none';
+                document.querySelectorAll('.repeat-weekday').forEach(cb => {
+                    cb.checked = false;
+                    cb.closest('.weekday-lbl').classList.remove('checked');
+                });
+                document.getElementById('repeat-count').value = '4';
+            }
+
+            modal.classList.add('show');
+        }
+
+        function hideModal() {
+            modal.classList.remove('show');
+            scheduleForm.reset();
+        }
+
+        cancelModalBtn.addEventListener('click', hideModal);
+        closeModalBtn.addEventListener('click', hideModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) hideModal();
+        });
+
+        // 快速選擇時間按鈕
+        document.querySelectorAll('.quick-time-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                scheduleTimeInput.value = btn.getAttribute('data-time');
+            });
+        });
+
+        // 監聽啟用重複行程切換
+        document.getElementById('enable-repeat').addEventListener('change', (e) => {
+            const repeatOptions = document.getElementById('repeat-options');
+            if (e.target.checked) {
+                repeatOptions.style.display = 'block';
+            } else {
+                repeatOptions.style.display = 'none';
+            }
+        });
+
+        // 監聽星期幾按鈕樣式切換
+        document.querySelectorAll('.weekday-lbl').forEach(label => {
+            const checkbox = label.querySelector('input[type="checkbox"]');
+            checkbox.addEventListener('change', () => {
+                if (checkbox.checked) {
+                    label.classList.add('checked');
+                } else {
+                    label.classList.remove('checked');
+                }
+            });
+        });
+
+        // 新增行程按鈕
+        addScheduleBtn.addEventListener('click', () => {
+            showModal('新增行程');
+        });
+
+        // 表單送出（新增與修改）
+        scheduleForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = editItemIdInput.value;
+            const time = scheduleTimeInput.value.trim();
+            const name = scheduleNameInput.value.trim();
+
+            const parts = selectedDateStr.split('-');
+            const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+            const dayOfWeek = dateObj.getDay();
+
+            if (id) {
+                // 編輯現有行程
+                let items = convertToCustom(selectedDateStr, dayOfWeek);
+                items = items.map(item => {
+                    if (item.id === id) {
+                        return { ...item, time, name };
+                    }
+                    return item;
+                });
+
+                saveDaySchedules(selectedDateStr, items)
+                    .then(() => {
+                        hideModal();
+                    })
+                    .catch(err => {
+                        alert("儲存失敗：" + err.message);
+                    });
+            } else {
+                // 新增行程
+                const enableRepeat = document.getElementById('enable-repeat').checked;
+                let targetDates = [selectedDateStr];
+
+                if (enableRepeat) {
+                    const checkedWeekdays = Array.from(document.querySelectorAll('.repeat-weekday:checked')).map(cb => parseInt(cb.value));
+                    if (checkedWeekdays.length === 0) {
+                        alert("請至少選擇一個星期幾進行重複設定！");
+                        return;
+                    }
+                    const count = parseInt(document.getElementById('repeat-count').value) || 1;
+                    targetDates = getRecurringDates(selectedDateStr, checkedWeekdays, count);
+                }
+
+                // 批次寫入所有相關日期
+                const promises = targetDates.map(dStr => {
+                    const dParts = dStr.split('-');
+                    const dObj = new Date(dParts[0], dParts[1] - 1, dParts[2]);
+                    const dDayOfWeek = dObj.getDay();
+
+                    let dItems = convertToCustom(dStr, dDayOfWeek);
+                    const newItem = {
+                        id: 'custom-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+                        time: time,
+                        name: name,
+                        checked: false
+                    };
+                    dItems.push(newItem);
+                    return saveDaySchedules(dStr, dItems);
+                });
+
+                Promise.all(promises)
+                    .then(() => {
+                        hideModal();
+                    })
+                    .catch(err => {
+                        alert("儲存重複行程失敗：" + err.message);
+                    });
+            }
+        });
+
+        // 批次刪除視窗邏輯
+        const batchDeleteModal = document.getElementById('batch-delete-modal');
+        const openBatchDeleteBtn = document.getElementById('open-batch-delete-btn');
+        const closeBatchModalBtn = document.getElementById('close-batch-modal-btn');
+        const cancelBatchModalBtn = document.getElementById('cancel-batch-modal-btn');
+        const batchDeleteForm = document.getElementById('batch-delete-form');
+        const tabByListBtn = document.getElementById('tab-by-list-btn');
+        const tabByRangeBtn = document.getElementById('tab-by-range-btn');
+        const selectListView = document.getElementById('batch-select-list-view');
+        const selectRangeView = document.getElementById('batch-select-range-view');
+        let activeTab = 'list'; // 'list' or 'range'
+
+        // 渲染已排定行程的日期複選清單
+        function populateScheduledDates() {
+            const listContainer = document.getElementById('scheduled-dates-list');
+            listContainer.innerHTML = '';
+            
+            const schedules = cloudData.schedules || {};
+            const datesWithEvents = Object.keys(schedules).filter(dateStr => {
+                const items = schedules[dateStr].items || [];
+                return items.length > 0;
+            }).sort();
+            
+            if (datesWithEvents.length === 0) {
+                listContainer.innerHTML = '<div style="text-align: center; color: #aaa; padding: 15px 0; font-size: 0.85rem;">目前無任何自訂行程日期</div>';
+                return;
+            }
+            
+            datesWithEvents.forEach(dateStr => {
+                const itemsCount = schedules[dateStr].items.length;
+                const parts = dateStr.split('-');
+                
+                const itemLabel = document.createElement('label');
+                itemLabel.className = 'checklist-item';
+                
+                itemLabel.innerHTML = `
+                    <input type="checkbox" class="batch-delete-date-cb" value="${dateStr}">
+                    <span>${parts[0]}年${parts[1]}月${parts[2]}日 (${itemsCount} 個行程)</span>
+                `;
+                
+                listContainer.appendChild(itemLabel);
+            });
+        }
+
+        // 開啟與關閉 Modal
+        openBatchDeleteBtn.addEventListener('click', () => {
+            populateScheduledDates();
+            document.getElementById('batch-start-date').value = selectedDateStr;
+            document.getElementById('batch-end-date').value = selectedDateStr;
+            batchDeleteModal.classList.add('show');
+        });
+
+        function hideBatchModal() {
+            batchDeleteModal.classList.remove('show');
+            batchDeleteForm.reset();
+        }
+
+        closeBatchModalBtn.addEventListener('click', hideBatchModal);
+        cancelBatchModalBtn.addEventListener('click', hideBatchModal);
+        batchDeleteModal.addEventListener('click', (e) => {
+            if (e.target === batchDeleteModal) hideBatchModal();
+        });
+
+        // 頁籤切換
+        tabByListBtn.addEventListener('click', () => {
+            activeTab = 'list';
+            tabByListBtn.classList.add('active');
+            tabByRangeBtn.classList.remove('active');
+            selectListView.style.display = 'block';
+            selectRangeView.style.display = 'none';
+        });
+
+        tabByRangeBtn.addEventListener('click', () => {
+            activeTab = 'range';
+            tabByRangeBtn.classList.add('active');
+            tabByListBtn.classList.remove('active');
+            selectListView.style.display = 'none';
+            selectRangeView.style.display = 'block';
+        });
+
+        // 批次刪除提交
+        batchDeleteForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            let targetDates = [];
+
+            if (activeTab === 'list') {
+                targetDates = Array.from(document.querySelectorAll('.batch-delete-date-cb:checked')).map(cb => cb.value);
+                if (targetDates.length === 0) {
+                    alert("請勾選至少一個日期！");
+                    return;
+                }
+            } else {
+                const startVal = document.getElementById('batch-start-date').value;
+                const endVal = document.getElementById('batch-end-date').value;
+                if (!startVal || !endVal) {
+                    alert("請設定開始與結束日期！");
+                    return;
+                }
+                const start = new Date(startVal);
+                const end = new Date(endVal);
+                if (start > end) {
+                    alert("開始日期不能晚於結束日期！");
+                    return;
+                }
+
+                let current = new Date(start);
+                while (current <= end) {
+                    targetDates.push(formatDateKey(current));
+                    current.setDate(current.getDate() + 1);
+                }
+            }
+
+            if (confirm(`確定要清除這 ${targetDates.length} 天的所有行程嗎？此動作將無法復原。`)) {
+                // 將這些日期的行程陣列儲存為空陣列（隱藏原本的預設課表）
+                const promises = targetDates.map(dStr => saveDaySchedules(dStr, []));
+                
+                Promise.all(promises)
+                    .then(() => {
+                        hideBatchModal();
+                        alert("已成功清空選取日期的行程！");
+                    })
+                    .catch(err => {
+                        alert("批次刪除失敗：" + err.message);
+                    });
+            }
+        });
+
+        // 匯出行程代碼相關邏輯
+        const exportModal = document.getElementById('export-modal');
+        const openExportBtn = document.getElementById('open-export-btn');
+        const closeExportModalBtn = document.getElementById('close-export-modal-btn');
+        const cancelExportModalBtn = document.getElementById('cancel-export-modal-btn');
+        const copyExportCodeBtn = document.getElementById('copy-export-code-btn');
+        const exportCodeArea = document.getElementById('export-code-area');
+
+        openExportBtn.addEventListener('click', () => {
+            const schedules = cloudData.schedules || {};
+            // 生成 JavaScript 常數格式
+            const codeString = `const defaultSchedules = ${JSON.stringify(schedules, null, 4)};`;
+            exportCodeArea.value = codeString;
+            exportModal.classList.add('show');
+        });
+
+        function hideExportModal() {
+            exportModal.classList.remove('show');
+            exportCodeArea.value = '';
+        }
+
+        closeExportModalBtn.addEventListener('click', hideExportModal);
+        cancelExportModalBtn.addEventListener('click', hideExportModal);
+        exportModal.addEventListener('click', (e) => {
+            if (e.target === exportModal) hideExportModal();
+        });
+
+        // 複製代碼
+        copyExportCodeBtn.addEventListener('click', () => {
+            exportCodeArea.select();
+            navigator.clipboard.writeText(exportCodeArea.value)
+                .then(() => {
+                    alert("已成功複製代碼！請將此段代碼貼至 index.html 原始碼中的 const defaultSchedules 區塊中。");
+                })
+                .catch(() => {
+                    // 備用複製機制
+                    try {
+                        document.execCommand('copy');
+                        alert("已成功複製代碼！請將此段代碼貼至 index.html 原始碼中的 const defaultSchedules 區塊中。");
+                    } catch (err) {
+                        alert("複製失敗，請手動全選複製 Textarea 內的代碼！");
+                    }
+                });
+        });
+
+        // 綁定月份導覽按鈕
         document.getElementById('prev-month-btn').addEventListener('click', () => {
             currentDate.setMonth(currentDate.getMonth() - 1);
             renderCalendar();
